@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Title</title>
+</head>
+<link rel="stylesheet" type="text/css" href="../jslib/jquery-easyui-1.4.4/themes/default/easyui.css"/>
+<link rel="stylesheet" type="text/css" href="../jslib/jquery-easyui-1.4.4/themes/icon.css"/>
+<script type="text/javascript" src="../jslib/jquery-2.1.1.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery-easyui-1.4.4/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery-easyui-1.4.4/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../jslib/jquery-easyui-1.4.4/util-js.js"></script>
+<link rel="stylesheet" href="../js/uploadify/uploadify.css" />
+<script src="../js/uploadify/jquery.uploadify.js"></script>
+<body>
+<div class="easyui-layout" data-options="fit:true">
+    <div data-options="region:'center',title:'功能区', border: false" style="height: 80%">
+        <div id="toolbar">
+            <table>
+                <tr>
+                    <td>
+                        <a onclick="cearchRole()" class="easyui-linkbutton"  data-options="iconCls:'icon-reload',plain:true">搜索</a>
+                    </td>
+                    <td>
+                        <a onclick="openDialog()" class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true">新增</a>
+                    </td>
+                    <td>
+                        <a onclick="editRole()"  class="easyui-linkbutton"  data-options="iconCls:'icon-edit',plain:true">修改</a>
+                    </td>
+                    <td>
+                        <a onclick="deletes()" class="easyui-linkbutton" data-options="iconCls:'icon-clear',plain:true">删除</a>
+                    </td>
+                    <td>
+                        <a onclick="member()" class="easyui-linkbutton"  data-options="iconCls:'icon-man',plain:true">成员</a>
+                    </td>
+                  <!--  <td>
+                        <a onclick="roleDialog()"  class="easyui-linkbutton" data-options="iconCls:'icon-edit',plain:true">角色模块权限</a>
+                    </td>-->
+                    <!--<td>
+                        角色分类:
+                        <select class="easyui-combobox" id="roletype">
+                            <option value="-1">&#45;&#45;请选择&#45;&#45;</option>
+                            <option value="1">超级管理员</option>
+                            <option value="2">超级VIP</option>
+                            <option value="3">系统管理员</option>
+                            <option value="4">普通VIP</option>
+                        </select>
+                    </td>
+                    <td>
+                        角色名称:
+                        <input class="easyui-textbox" data-options="prompt:'请输入角色名称'" id="rolename" style="width:100px;height:32px" />
+                    </td>-->
+                </tr>
+            </table>
+        </div>
+        <table id="myTable"></table>
+    </div>
+</div>
+<div id="saveDialog" class="easyui-dialog" data-options="title:'新增用户',modal:'true',closed:true,
+		buttons:[
+			{
+				text:'保存',
+				iconCls:'icon-add',
+				plain:true,
+				handler:function(){
+					saveBook();
+				}
+			},{
+				text:'关闭',
+				iconCls:'icon-clear',
+				plain:true,
+				handler:function(){
+					closeDialog();
+				}
+			}
+
+		]" style="width: 600px; height: 430px">
+    <form id="roleForm" action="###" method="POST">
+        <table border="0" width="350px" height="300px">
+            <tr>
+                <td>名称:</td>
+                <td>
+                    <input type="text" name="bookId"/>
+                    <input type="text" class="easyui-textbox" name="book_name"/>
+                </td>
+            </tr>
+            <tr>
+                <td>时间:</td>
+                <td>
+                    <input type="text"  name="bookDate" class="easyui-datetimebox"/>
+                </td>
+            </tr>
+            <tr>
+                <td>角色分类:</td>
+                <td>
+                    <select class="easyui-combobox" name="bookType">
+                        <option value="">--请选择--</option>
+                        <option value="1">言情</option>
+                        <option value="2">小说</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>图片:</td>
+                <td>
+                    <!-- <input type="text" name="url"/> -->
+                    <!-- <div id="file_upload"></div> -->
+                    <input type="file" id="file_upload" />
+                    <img id="mypic" width="100" height="120" src=""/>
+                    <input type="hidden" name="bookUrl" id="url" />
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<!-- 角色 -->
+<div class="easyui-layout" id="role_moduleList_dialog" style="width:600px;height:500px;"  data-options="iconCls:'',resizable:true,modal:true,
+			buttons:[
+				{
+					text:'保存',
+					iconCls:'icon-add',
+					plain:true,
+					handler:function(){
+						addRole();
+					}
+				},{
+					text:'关闭',
+					iconCls:'icon-clear',
+					plain:true,
+					handler:function(){
+						closeDialog2();
+					}
+				}
+			]
+		">
+    <table id="myRoleList"></table>
+    <div data-options="region:'east',title:'模块(菜单)',iconcls:'icon-search'" style="width: 48%">
+        <div class="easyui-accordion" data-options="fit:true, border: false">
+            <table id="myTree1"></table>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+    $(function(){
+        ininMyTree();
+    })
+    //同步树
+    function ininMyTree(){
+        $("#myTable").datagrid({
+            url:'/queryBookList',
+            fit:true,
+            toolbar:'#toolbar',
+            /*pagination:true,
+            pageNumber:1, //当前页
+            pageSize:5, //每页多少条
+            pageList:[1,5,7,9,10,20,50],//分页下拉框*/
+            loadMsg:'数据加载中......',
+            columns:[[
+                {field:'bookId',title:'ID',checkbox:true},
+                {field:'book_name',title:'名称',width: 210},
+                {field:'bookDate',title:'时间',width: 210},
+                {field:'bookType',title:'类型',width: 210,formatter:function(value,row,index){
+                        return value == 1? '正常' : '禁用';
+                    }},
+                {field:'bookUrl',title:'图片',width: 210,formatter:function(value,row,index){
+                        return '<img src="../'+row.url+'" width="120px" height="70px"/>';
+                    }},
+                {field:'123',title:'管理',width: 200,formatter:function(value,row,index){
+                        return '<a href="javascript:deletes('+ row.bookId +');">删除</a>';
+                 }},
+            ]]
+        })
+    }
+    //批量删除
+    function deletes(){
+        var arr = $("#myTable").datagrid('getChecked');
+        //alert(ids);
+        var ids = '';
+        $.each(arr, function(i, item){
+            ids += ids == '' ? arr[i].id : ","+arr[i].id;
+        });
+
+        $.ajax({
+            url : "/deletes",
+            async : true,
+            type: "POST",
+            data: {"ids":ids},
+            dataType: "json",
+            success : function(data) {
+                if(data == 1){
+                    cearchRole();
+                }else{
+                    alert("删除失败！");
+                }
+            }
+        })
+    }
+    //关闭新增弹框
+    function closeDialog(){
+        $('#roleForm').form('reset');
+        $('#saveDialog').dialog('close');
+    }
+
+    function openDialog(){
+        $('#saveDialog').dialog({
+            title:'新增用户',
+            iconCls:'icon-add',
+            closed:false
+        })
+    }
+
+    //新增用户信息savaRole();
+    function saveBook(){
+        $('#roleForm').form({
+            url:'/saveBook',
+            success:function(data){
+                if(data == 1){
+                    closeDialog();
+                    cearchRole();
+                }else{
+                    alert("新增失败！");
+                }
+            }
+        })
+        $('#roleForm').submit();
+    }
+    //条件查询获取参数
+    function cearchRole(){
+        var roletype = $('#roletype').combobox('getValue');
+        var rolename = $('#rolename').textbox('getValue');
+        /* alert(roletype);
+        alert(rolename); */
+        $('#myTable').datagrid('load',{
+            roletype:roletype,
+            rolename:rolename
+        })
+    }
+
+
+    //回显
+    function editRole(){
+        var arr = $("#myTable").datagrid('getSelected');
+
+        $("#roleForm").form("load",arr);
+        $("#saveDialog").dialog("open");
+
+
+    }
+
+
+    ////初始化uploadify
+    $(function () {
+        $("#file_upload").uploadify({
+            //开启调试
+            'debug': true,
+            //是否自动上传
+            'auto': true,
+            'multi': false,  //是否多文件上传
+            //'buttonImage':'../js/uploadify/background.png', //浏览将要上传文件按钮的背景图片路径
+            'buttonText': '选择文件',
+            //flash
+            'swf': "../js/uploadify/uploadify.swf",
+            'fileObjName': "picFile",
+            'queueSizeLimit': 5,
+            //文件选择后的容器ID
+            'queueID': 'uploadfileQueue',
+            //后台运行上传的程序
+            'uploader': '/upload',
+            'width': '100',
+            'height': '24',
+            //是否支持多文件上传，这里为true，你在选择文件的时候，就可以选择多个文件
+            'multi': true,
+            'fileTypeDesc': '支持的格式：',
+            'fileTypeExts': '*.jpg;*.jpge;*.gif;*.png',
+            'fileSizeLimit': '1MB',
+            //上传完成后多久删除进度条
+            'removeTimeout': 1,
+            //返回一个错误，选择文件的时候触发
+            'onSelectError': function (file, errorCode, errorMsg) {
+                switch (errorCode) {
+                    case -100:
+                        alert("上传的文件数量已经超出系统限制的" + $('#file_upload').uploadify('settings', 'queueSizeLimit') + "个文件！");
+                        break;
+                    case -110:
+                        alert("文件 [" + file.name + "] 大小超出系统限制的" + $('#file_upload').uploadify('settings', 'fileSizeLimit') + "大小！");
+                        break;
+                    case -120:
+                        alert("文件 [" + file.name + "] 大小异常！");
+                        break;
+                    case -130:
+                        alert("文件 [" + file.name + "] 类型不正确！");
+                        break;
+                }
+            },
+            //检测FLASH失败调用
+            'onFallback': function () {
+                alert("您未安装FLASH控件，无法上传图片！请安装FLASH控件后再试。");
+            },
+            //上传到服务器，服务器返回相应信息到data里
+            'onUploadSuccess': function (file, data, response) {
+                //alert(file.name);
+                //$("#mypic").attr("src", "${pageContext.request.contextPath }/"+data);
+                var imgurl = "../"+data;
+                $("#mypic").attr("src",imgurl);
+                $("#url").val(data);
+            },
+            //多文件上传，服务器返回相应的信息
+            'onQueueComplete': function (queueData) {
+                //alert(queueData.uploadsSuccessful);
+            }
+        });
+    });
+
+    //开始上传
+    function doUpload() {
+        $('#file_upload').uploadify('upload', '*');
+    }
+    //停止上传
+    function closeLoad() {
+        $('#file_upload').uploadify('cancel', '*');
+    }
+
+
+    //角色
+    function roleDialog(){
+        $('#role_moduleList_dialog').dialog({
+            title:'角色模块(菜单)权限批量设置',
+            iconCls:'icon-man',
+            closed:false
+        })
+        $("#myRoleList").datagrid({
+            url:'getRoleList',
+            fit:true,
+            singleSelect:true,
+            loadMsg:'数据加载中......',
+            columns:[[
+                {field:'id',title:'ID'},
+                {field:'rolename',title:'角色名称',width: 147},
+                {field:'code',title:'角色编号',width: 147}
+            ]],onClickRow:function(index,row){
+                initMunuList(row.id);
+            }
+        })
+    }
+
+
+    //查询该角色拥有的权限
+    function initMunuList(id){
+        $('#myTree1').tree({
+            lines:true,
+            checkbox:true,
+            parentField:"parentid",
+            url:'queryRoleMunuList?id='+id,
+        });
+    }
+
+    //关闭角色关联模块弹框
+    function closeDialog2(){
+        $('#role_moduleList_dialog').dialog('close');
+    }
+
+    //新增角色关联权限
+    function addRole(){
+        var row = $('#myRoleList').datagrid('getSelected');
+        var arr = $("#myTree1").tree('getChecked');
+        //获取的模块id
+        var ids = '';
+        $.each(arr, function(i, item){
+            ids += ids == '' ? arr[i].id : ","+arr[i].id;
+        });
+        //alert(row);
+        //alert(ids);
+        $.ajax({
+            url : "addRoleandMenu",
+            async : true,
+            type: "POST",
+            data: {"id":row.id , "ids":ids},
+            dataType: "json",
+            contentType: "application/x-www-form-urlencoded; charset=utf-8",
+            success : function(data) {
+                if(data){
+                    alert("授权成功！");
+                    location.href="query2";
+                }
+            },
+            error : function(e){
+                alert("网络连接失败，请您稍后再试！");
+            }
+        })
+    }
+
+</script>
+</html>
